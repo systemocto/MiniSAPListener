@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 {
     char *command = NULL;
     char *maddr = "224.2.127.254";
+    char *saddr = NULL;
     int port = 9875;
     int verbose = 0;
 
@@ -33,6 +34,9 @@ int main(int argc, char **argv)
             break;
         case 'a':
             maddr = optarg;
+            break;
+        case 's':
+            saddr = optarg;
             break;
         case 'p':
             port = atoi(optarg);
@@ -49,12 +53,13 @@ int main(int argc, char **argv)
             fprintf(stderr, "\n");
             fprintf(stderr, "OPTIONS:\n");
             fprintf(stderr, "  -a ADDRESS  multicast address to listen\n");
+            fprintf(stderr, "  -s ADDRESS  multicast source address\n");
             fprintf(stderr, "  -p PORT     UDP port to listen\n");
             fprintf(stderr, "  -c COMMAND  shell command to invoke\n");
             fprintf(stderr, "  -v          verbose mode\n");
             return 0;
         case '?':
-            if (optopt == 'c' || optopt == 'a' || optopt == 'p') {
+            if (optopt == 'c' || optopt == 'a' || optopt == 's' || optopt == 'p') {
                 fprintf(stderr, "option -%c requires an argument\n", optopt);
             } else {
                 fprintf(stderr, "unknown option -%c\n", optopt);
@@ -82,15 +87,32 @@ int main(int argc, char **argv)
     }
 
     struct ip_mreq mreq = {};
-    if (!inet_aton(maddr, &mreq.imr_multiaddr)) {
-        fprintf(stderr, "failed to parse address: %s\n", maddr);
-        return 1;
-    }
-    if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq)) == -1) {
-        perror("setsockopt(IP_ADD_MEMBERSHIP)");
-        return 1;
-    }
+    struct ip_mreq_source sreq = {};
+    if( saddr == NULL ) {
+            if (!inet_aton(maddr, &mreq.imr_multiaddr)) {
+                fprintf(stderr, "failed to parse address maddr1: %s\n", maddr);
+                return 1;
+            }
+            if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq)) == -1) {
+                perror("setsockopt(IP_ADD_MEMBERSHIP)");
+                return 1;
+            }
+    } else {
 
+            if (!inet_aton(maddr, &sreq.imr_multiaddr)) {
+                fprintf(stderr, "failed to parse address maddr2: %s\n", maddr);
+                return 1;
+            }
+            if (!inet_aton(saddr, &sreq.imr_sourceaddr)) {
+                fprintf(stderr, "failed to parse address saddr: %s\n", saddr);
+                return 1;
+            }
+            if (setsockopt(sock, IPPROTO_IP, IP_ADD_SOURCE_MEMBERSHIP, (char*)&sreq, sizeof(sreq)) == -1) {
+                perror("setsockopt(IP_ADD_SOURCE_MEMBERSHIP)");
+                return 1;
+            }
+    }
+    
     sap_context sap;
     if (!sap_init(&sap, sock)) {
         fprintf(stderr, "sap_init failed\n");
