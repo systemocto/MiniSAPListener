@@ -81,20 +81,31 @@ sdp_info *sdp_parse(const char *t, int is_goodbye) {
     i->payload_type = -1;
     i->goodbye = is_goodbye;
 
-    if (!startswith(t, SDP_HEADER)) {
+    if (startswith(t, SDP_HEADER)) {
+        t += sizeof(SDP_HEADER)-1;
+        /* CR delimiter is optional */
+        if (*t == '\r')
+            t++;
+
+        /* LF delimiter is mandatory */
+        if (*t == '\n')
+            t++;
+        else {
+            fprintf(stderr,"Failed to parse SDP data: missing header record terminator LF.");
+            goto fail;
+        }
+    }else {
         fprintf(stderr, "failed to parse SDP data: invalid header\n");
         goto fail;
     }
 
-    t += sizeof(SDP_HEADER)-1;
-
     while (*t) {
         size_t l;
 
-        l = strcspn(t, "\n");
+        l = strcspn(t, "\r\n");
 
         if (l <= 2) {
-            fprintf(stderr, "failed to parse SDP data: line too short: >%s<\n", t);
+            fprintf(stderr, "failed to parse SDP data: line too short: len=%li %li>%s<\n", strlen(t), l, t);
             goto fail;
         }
 
@@ -195,8 +206,17 @@ sdp_info *sdp_parse(const char *t, int is_goodbye) {
 
         t += l;
 
+        /* CR delimiter is optional */
+        if (*t == '\r')
+            t++;
+
+        /* LF delimiter is mandatory */
         if (*t == '\n')
             t++;
+        else {
+            fprintf(stderr, "Failed to parse SDP data: missing record terminator LF.");
+            goto fail;
+        }
     }
 
     return i;
