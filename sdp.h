@@ -28,7 +28,7 @@
 
 #include <stdbool.h>
 
-#define SDP_HEADER "v=0\n"
+#define SDP_HEADER "v=0"
 
 typedef struct sdp_info {
     char *origin;
