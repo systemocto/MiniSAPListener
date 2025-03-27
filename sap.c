@@ -137,7 +137,10 @@ int sap_recv(sap_context *c, bool *goodbye) {
         e += sizeof(MIME_TYPE);
         size -= (int) sizeof(MIME_TYPE);
     } else if ((unsigned) size < sizeof(SDP_HEADER)-1
-               || strncmp(e, SDP_HEADER, sizeof(SDP_HEADER)-1)) {
+               || strncmp(e, SDP_HEADER, sizeof(SDP_HEADER)-1)
+               || strcspn(e, "\r\n") != sizeof(SDP_HEADER)-1) {
+          /* SDP header does not start with v=0[\r]\n */
+
         fprintf(stderr, "invalid SDP header\n");
         goto fail;
     }
