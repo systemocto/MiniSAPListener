@@ -163,6 +163,18 @@ int main(int argc, char **argv)
             printf("\n");
         }
 
+        if (1) {
+                char sdpsource[64];
+                char *sap2 = malloc(512);
+                sprintf(sdpsource, "a=source-filter: incl IN IP4 %s %s\n", sdp->conn, saddr);
+                printf("\n################################## src=%s, len=%li\n", saddr, strlen(sap.sdp_data) );
+                printf("%s", sap.sdp_data );
+                printf(sdpsource);
+                printf("###################################\n");
+
+//              SDP_send(sap2, maddr2, strlen(sap.sdp_data) + 24 + strlen(sdpsource) , ifaceo);
+        }
+
         bool skip = false;
         for (size_t n = 0; n < history_size; n++) {
             if (!history[n]) {
